@@ -1,10 +1,10 @@
+import { AlertCircle, Home } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Card, CardBody } from "../components/ui/Card";
-import { Home, AlertCircle } from "lucide-react";
+import { Input } from "../components/ui/Input";
+import { useAuth } from "../context/AuthContext";
 
 export const LoginPage = () => {
   const navigate = useNavigate();

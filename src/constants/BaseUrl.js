@@ -1,1 +1,2 @@
-export const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:7000";
+export const apiUrl =
+  import.meta.env.VITE_API_URL || "https://teenants-app.onrender.com";
