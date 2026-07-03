@@ -24,7 +24,7 @@ export const ChatProvider = ({ children }) => {
     if (!user) return;
 
     // Connect to production socket server
-    const socketInstance = io("https://teenants-app.onrender.com", {
+    const socketInstance = io("https://api.teenants.site", {
       auth: { token: localStorage.getItem("token") },
       reconnection: true,
       reconnectionDelay: 1000,
