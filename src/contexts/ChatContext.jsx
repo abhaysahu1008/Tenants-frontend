@@ -59,10 +59,6 @@ export const ChatProvider = ({ children }) => {
       });
     });
 
-    socketInstance.on("message_sent", (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
     setSocket(socketInstance);
 
     return () => {
