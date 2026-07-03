@@ -12,19 +12,10 @@ import { useAuth } from "./AuthContext";
 
 const ChatContext = createContext(null);
 
-const normalizeId = (value) => {
-  if (!value) return null;
-  return typeof value === "object"
-    ? value._id?.toString() || value.toString()
-    : value.toString();
-};
-
-const getChatRoomId = (userId, otherId) => {
-  const first = normalizeId(userId);
-  const second = normalizeId(otherId);
-  if (!first || !second) return null;
-  return `chat:${[first, second].sort().join(":")}`;
-};
+// Production URL - no /api suffix for socket.io
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL
+  ? import.meta.env.VITE_API_BASE_URL.replace("/api", "")
+  : "http://localhost:7000";
 
 export const ChatProvider = ({ children }) => {
   const { user } = useAuth();
@@ -32,122 +23,87 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [activeChatUser, setActiveChatUser] = useState(null);
   const [socket, setSocket] = useState(null);
-  const [currentRoom, setCurrentRoom] = useState(null);
-  const previousRoomRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Track processed message IDs to prevent duplicates
+  const processedMessages = useRef(new Set());
 
   useEffect(() => {
     if (!user) return;
 
-    const socketInstance = io("http://localhost:7000", {
+    const socketInstance = io(SOCKET_URL, {
       auth: { token: localStorage.getItem("token") },
-      transports: ["websocket"],
+      transports: ["websocket", "polling"], // Fallback for production
+    });
+
+    socketInstance.on("connect", () => {
+      console.log("Socket connected");
+      setError(null);
     });
 
     socketInstance.on("connect_error", (err) => {
       console.error("Socket connect error", err.message);
-      setError(err.message);
+      setError("Chat connection failed. Retrying...");
     });
 
     socketInstance.on("receive_message", (message) => {
-      const senderId = normalizeId(message.sender);
-      setMessages((prev) => [...prev, message]);
+      // Deduplicate messages
+      if (processedMessages.current.has(message._id)) return;
+      processedMessages.current.add(message._id);
+
+      // Keep set size manageable
+      if (processedMessages.current.size > 1000) {
+        processedMessages.current.clear();
+      }
+
+      setMessages((prev) => {
+        // Double check not already in list
+        if (prev.some((m) => m._id === message._id)) return prev;
+        return [...prev, message];
+      });
+
+      // Update conversations list
       setConversations((prev) => {
-        const existing = prev.find(
-          (item) =>
-            normalizeId(item._id) === senderId ||
-            normalizeId(item.participant?._id) === senderId,
+        const senderId =
+          typeof message.sender === "object"
+            ? message.sender._id?.toString()
+            : message.sender?.toString();
+
+        const existingIndex = prev.findIndex(
+          (item) => item._id?.toString() === senderId,
         );
 
-        const participantData =
-          typeof message.sender === "object" && message.sender.name
-            ? message.sender
-            : existing?.participant;
-
-        const participant = participantData
-          ? {
-              _id: normalizeId(participantData),
-              name: participantData.name || { firstName: "Unknown" },
-              email: participantData.email || "",
-            }
-          : {
-              _id: senderId,
-              name: { firstName: "Unknown" },
-              email: "",
-            };
-
-        const updatedItem = {
-          _id: senderId,
-          participant,
-          lastMessage: message.text,
-          lastMessageAt: message.createdAt,
-          unreadCount: existing ? (existing.unreadCount || 0) + 1 : 1,
-        };
-
-        if (existing) {
-          return prev.map((item) =>
-            normalizeId(item._id) === senderId ||
-            normalizeId(item.participant?._id) === senderId
-              ? { ...item, ...updatedItem }
-              : item,
-          );
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            lastMessage: message.text,
+            lastMessageAt: message.createdAt,
+            unreadCount:
+              senderId !== user?._id?.toString()
+                ? (updated[existingIndex].unreadCount || 0) + 1
+                : updated[existingIndex].unreadCount,
+          };
+          // Move to top
+          const [moved] = updated.splice(existingIndex, 1);
+          return [moved, ...updated];
         }
 
-        return [updatedItem, ...prev];
+        return prev;
       });
     });
 
     socketInstance.on("message_sent", (message) => {
-      setMessages((prev) => [...prev, message]);
-      const receiverId = normalizeId(message.receiver);
-      setConversations((prev) => {
-        const existing = prev.find(
-          (item) =>
-            normalizeId(item._id) === receiverId ||
-            normalizeId(item.participant?._id) === receiverId,
-        );
-
-        const participantData =
-          typeof message.receiver === "object" && message.receiver.name
-            ? message.receiver
-            : existing?.participant;
-
-        const participant = participantData
-          ? {
-              _id: normalizeId(participantData),
-              name: participantData.name || { firstName: "Unknown" },
-              email: participantData.email || "",
-            }
-          : {
-              _id: receiverId,
-              name: { firstName: "Unknown" },
-              email: "",
-            };
-
-        const updatedItem = {
-          _id: receiverId,
-          participant,
-          lastMessage: message.text,
-          lastMessageAt: message.createdAt,
-          unreadCount: existing ? existing.unreadCount || 0 : 0,
-        };
-
-        if (existing) {
-          return prev.map((item) =>
-            normalizeId(item._id) === receiverId ||
-            normalizeId(item.participant?._id) === receiverId
-              ? { ...item, ...updatedItem }
-              : item,
-          );
-        }
-
-        return [updatedItem, ...prev];
-      });
-    });
-
-    socketInstance.on("message_error", (payload) => {
-      setError(payload?.message || "Unable to send message");
+      // Don't add here - receive_message will handle it if room is joined
+      // Only add if we're sure receive_message won't fire
+      if (!processedMessages.current.has(message._id)) {
+        processedMessages.current.add(message._id);
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === message._id)) return prev;
+          return [...prev, message];
+        });
+      }
     });
 
     setSocket(socketInstance);
@@ -158,42 +114,25 @@ export const ChatProvider = ({ children }) => {
     };
   }, [user]);
 
+  // Join chat room when activeChatUser changes
   useEffect(() => {
-    if (!socket || !user || !activeChatUser) return;
+    if (!socket || !activeChatUser || !user) return;
 
-    const roomId = getChatRoomId(user._id, activeChatUser);
-    if (!roomId) return;
-
-    const previousRoom = previousRoomRef.current;
-    if (previousRoom && previousRoom !== roomId) {
-      socket.emit("leave_room", { roomId: previousRoom });
-    }
-
-    socket.emit("join_room", { roomId });
-    previousRoomRef.current = roomId;
-    setCurrentRoom(roomId);
+    // Leave previous chat if any
+    // Join new chat room
+    socket.emit("join_chat", { otherUserId: activeChatUser });
 
     return () => {
-      if (roomId) {
-        socket.emit("leave_room", { roomId });
-      }
+      socket.emit("leave_chat", { otherUserId: activeChatUser });
     };
   }, [socket, activeChatUser, user]);
-
-  useEffect(() => {
-    if (conversations.length === 0) return;
-    if (!activeChatUser) {
-      setActiveChatUser(normalizeId(conversations[0]._id));
-    }
-  }, [conversations, activeChatUser]);
 
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await chatService.getConversations();
-      const data = response.data.data || [];
-      setConversations(data);
+      setConversations(response.data.data || []);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch conversations");
@@ -208,7 +147,14 @@ export const ChatProvider = ({ children }) => {
     setError(null);
     try {
       const response = await chatService.getMessages(chatUserId);
-      setMessages(response.data.data || []);
+      const msgs = response.data.data || [];
+
+      // Clear processed set and populate with fetched messages
+      processedMessages.current.clear();
+      msgs.forEach((m) => processedMessages.current.add(m._id));
+
+      setMessages(msgs);
+      setActiveChatUser(chatUserId);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch messages");
@@ -221,9 +167,25 @@ export const ChatProvider = ({ children }) => {
   const sendMessage = useCallback(
     (receiverId, text) => {
       if (!socket) throw new Error("Socket not initialized");
+
+      // Optimistically add message to UI immediately
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage = {
+        _id: tempId,
+        sender: { _id: user?._id, name: user?.name, email: user?.email },
+        receiver: { _id: receiverId },
+        text,
+        read: false,
+        createdAt: new Date().toISOString(),
+        isOptimistic: true,
+      };
+
+      setMessages((prev) => [...prev, optimisticMessage]);
+
+      // Send via socket
       socket.emit("send_message", { receiverId, text });
     },
-    [socket],
+    [socket, user],
   );
 
   return (
