@@ -432,10 +432,6 @@ export const PropertyDetailPage = () => {
           </Card>
         </div>
       </div>
-      <div className="p-9">
-        {/* <button onClick={() => setDoMsg(true)}>SEND MESSAGE</button> */}
-        heyyyyyyyyy
-      </div>
     </div>
   );
 };
