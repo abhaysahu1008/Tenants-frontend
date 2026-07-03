@@ -11,8 +11,8 @@ import { useAuth } from "./AuthContext";
 
 const ChatContext = createContext(null);
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL
-  ? import.meta.env.VITE_API_BASE_URL.replace("/api", "")
+const SOCKET_URL = import.meta.env.PROD
+  ? "https://api.teenants.site"
   : "http://localhost:7000";
 
 const normalizeId = (value) => {
