@@ -23,16 +23,31 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
 
-    const socketInstance = io("http://localhost:7000", {
+    // Connect to production socket server
+    const socketInstance = io("https://teenants-app.onrender.com", {
       auth: { token: localStorage.getItem("token") },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
+
+    socketInstance.on("connect", () => {
+      console.log("Socket connected successfully");
+      setError(null);
     });
 
     socketInstance.on("connect_error", (err) => {
-      console.error("Socket connect error", err.message);
-      setError(err.message);
+      console.error("Socket connect error:", err.message);
+      setError(`Connection error: ${err.message}`);
+    });
+
+    socketInstance.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
     });
 
     socketInstance.on("receive_message", (message) => {
+      console.log("Received message:", message);
       setMessages((prev) => [...prev, message]);
       setConversations((prev) => {
         const existing = prev.find(
@@ -59,8 +74,13 @@ export const ChatProvider = ({ children }) => {
       });
     });
 
-    socketInstance.on("message_sent", (message) => {
-      setMessages((prev) => [...prev, message]);
+    socketInstance.on("message_delivered", (message) => {
+      console.log("Message delivered:", message);
+    });
+
+    socketInstance.on("message_error", (error) => {
+      console.error("Message error:", error);
+      setError(`Message error: ${error.message}`);
     });
 
     setSocket(socketInstance);
@@ -104,7 +124,15 @@ export const ChatProvider = ({ children }) => {
 
   const sendMessage = useCallback(
     async (receiverId, text) => {
-      if (!socket) throw new Error("Socket not initialized");
+      if (!socket) {
+        setError("Socket not initialized. Please refresh the page.");
+        throw new Error("Socket not initialized");
+      }
+      if (!socket.connected) {
+        setError("Not connected to server. Attempting to reconnect...");
+        socket.connect();
+        throw new Error("Socket not connected");
+      }
       socket.emit("send_message", { receiverId, text });
     },
     [socket],
