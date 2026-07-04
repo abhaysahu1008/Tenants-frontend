@@ -13,7 +13,7 @@ import { Card, CardBody } from "../components/ui/Card";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useApplication } from "../context/ApplicationContext";
 import { useAuth } from "../context/AuthContext";
-import { useChat } from "../context/ChatContext";
+// import { useChat } from "../context/ChatContext";
 import { useProperty } from "../context/PropertyContext";
 import {
   DEFAULT_PROPERTY_IMAGE,
@@ -42,7 +42,7 @@ export const PropertyDetailPage = () => {
     rejectApplication,
   } = useApplication();
   const { user } = useAuth();
-  const { setActiveChatUser } = useChat();
+  // const { setActiveChatUser } = useChat();
   const [message, setMessage] = useState("");
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
