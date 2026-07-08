@@ -13,7 +13,7 @@ import { Card, CardBody } from "../components/ui/Card";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 import { useApplication } from "../context/ApplicationContext";
 import { useAuth } from "../context/AuthContext";
-// import { useChat } from "../context/ChatContext";
+import { useChat } from "../context/ChatContext";
 import { useProperty } from "../context/PropertyContext";
 import {
   DEFAULT_PROPERTY_IMAGE,
@@ -29,6 +29,7 @@ import {
 } from "../utils/formatters";
 
 export const PropertyDetailPage = () => {
+  const { openChatWithUser } = useChat();
   const { propertyId } = useParams();
   const navigate = useNavigate();
   const { currentProperty, fetchProperty, isLoading } = useProperty();
@@ -42,7 +43,7 @@ export const PropertyDetailPage = () => {
     rejectApplication,
   } = useApplication();
   const { user } = useAuth();
-  // const { setActiveChatUser } = useChat();
+  const { setActiveChatUser } = useChat();
   const [message, setMessage] = useState("");
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -56,11 +57,15 @@ export const PropertyDetailPage = () => {
     );
   });
 
-  const handleMessageOwner = () => {
+  const handleMessageOwner = async () => {
     const ownerId = currentProperty?.createdBy?._id;
     if (!ownerId) return;
-    setActiveChatUser(ownerId.toString());
-    navigate("/chat");
+    try {
+      const chatId = await openChatWithUser(ownerId.toString());
+      navigate(`/chat/${chatId}`);
+    } catch {
+      alert("Could not open chat with owner");
+    }
   };
 
   useEffect(() => {
@@ -317,14 +322,19 @@ export const PropertyDetailPage = () => {
                             <div className="mt-4 flex flex-wrap gap-2">
                               <Button
                                 size="sm"
-                                onClick={() => acceptApplication(app._id)}
+                                onClick={() => {
+                                  console.log(app);
+                                  acceptApplication(app.applicationId);
+                                }}
                               >
                                 Accept
                               </Button>
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => rejectApplication(app._id)}
+                                onClick={() =>
+                                  rejectApplication(app.applicationId)
+                                }
                               >
                                 Reject
                               </Button>

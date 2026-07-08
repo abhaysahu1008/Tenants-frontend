@@ -60,6 +60,7 @@ export const ApplicationProvider = ({ children }) => {
 
   const acceptApplication = useCallback(async (id) => {
     setIsLoading(true);
+    console.log(id);
     try {
       await applicationService.acceptApplication(id);
       setPropertyApplications((prev) =>

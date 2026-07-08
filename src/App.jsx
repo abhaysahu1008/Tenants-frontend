@@ -4,11 +4,10 @@ import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 import { AiMatchProvider } from "./context/AiMatchContext";
 import { ApplicationProvider } from "./context/ApplicationContext";
 import { AuthProvider } from "./context/AuthContext";
-// import { ChatProvider } from "./context/ChatContext";
 import { PropertyProvider } from "./context/PropertyContext";
 import "./index.css";
 import { ApplicationsPage } from "./pages/ApplicationsPage";
-// import { ChatPage } from "./pages/ChatPage";
+import { ChatPage } from "./pages/ChatPage";
 import { CreatePropertyPage } from "./pages/CreatePropertyPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -17,6 +16,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { PropertiesPage } from "./pages/PropertiesPage";
 import { PropertyDetailPage } from "./pages/PropertyDetailPage";
 import { SignupPage } from "./pages/SignupPage";
+import { ChatProvider } from "./context/ChatContext";
 
 function App() {
   return (
@@ -25,69 +25,84 @@ function App() {
         <PropertyProvider>
           <ApplicationProvider>
             <AiMatchProvider>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route
-                    path="/properties"
-                    element={
-                      <ProtectedRoute>
-                        <PropertiesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/properties/:propertyId"
-                    element={
-                      <ProtectedRoute>
-                        <PropertyDetailPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/properties/create"
-                    element={
-                      <ProtectedRoute>
-                        <CreatePropertyPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/matches"
-                    element={
-                      <ProtectedRoute>
-                        <MatchesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/applications"
-                    element={
-                      <ProtectedRoute>
-                        <ApplicationsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* <Route
-                    path="/chat"
-                    element={
-                      <ProtectedRoute>
-                        <ChatPage />
-                      </ProtectedRoute>
-                    }
-                  /> */}
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <ProfilePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </Layout>
+              <ChatProvider>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignupPage />} />
+
+                    <Route
+                      path="/properties"
+                      element={
+                        <ProtectedRoute>
+                          <PropertiesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/properties/:propertyId"
+                      element={
+                        <ProtectedRoute>
+                          <PropertyDetailPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/properties/create"
+                      element={
+                        <ProtectedRoute>
+                          <CreatePropertyPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/matches"
+                      element={
+                        <ProtectedRoute>
+                          <MatchesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/applications"
+                      element={
+                        <ProtectedRoute>
+                          <ApplicationsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Fallback base chat view */}
+                    <Route
+                      path="/chat"
+                      element={
+                        <ProtectedRoute>
+                          <ChatPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Dynamic room-specific chat view */}
+                    <Route
+                      path="/chat/:chatId"
+                      element={
+                        <ProtectedRoute>
+                          <ChatPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <ProfilePage />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </Layout>
+              </ChatProvider>
             </AiMatchProvider>
           </ApplicationProvider>
         </PropertyProvider>
