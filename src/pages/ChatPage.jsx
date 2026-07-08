@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import { ArrowLeft } from "lucide-react";
 
 const getInitials = (name) => {
   if (!name) return "?";
@@ -42,6 +43,11 @@ export const ChatPage = () => {
   } = useChat();
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef(null);
+  const [showChat, setShowChat] = useState(!!chatId);
+
+  useEffect(() => {
+    setShowChat(!!chatId);
+  }, [chatId]);
 
   useEffect(() => {
     fetchConversations();
@@ -53,8 +59,10 @@ export const ChatPage = () => {
     }
   }, [chatId, fetchMessages]);
 
+  // Fix: Only auto-select the first chat if the user is on a desktop screen
   useEffect(() => {
-    if (!chatId && conversations.length > 0) {
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    if (!chatId && conversations.length > 0 && isDesktop) {
       navigate(`/chat/${conversations[0]._id}`, { replace: true });
     }
   }, [chatId, conversations, navigate]);
@@ -75,14 +83,32 @@ export const ChatPage = () => {
     setInputText("");
   };
 
+  const handleBackToList = () => {
+    setShowChat(false);
+    navigate("/chat");
+  };
+
   return (
     <div className="flex h-[calc(100vh-64px)] bg-gray-50">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
+      <div
+        className={`
+          ${showChat ? "hidden" : "flex"}
+          md:flex
+          w-full
+          md:w-80
+          bg-white
+          border-r
+          border-gray-200
+          overflow-y-auto
+          flex-col
+          flex-shrink-0
+        `}
+      >
         <div className="p-4 border-b border-gray-100">
           <h3 className="font-semibold text-gray-800">Messages</h3>
         </div>
-        <div>
+        <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
             <div className="p-6 text-center">
               <p className="text-sm text-gray-500">No conversations yet</p>
@@ -101,7 +127,10 @@ export const ChatPage = () => {
               return (
                 <div
                   key={c._id}
-                  onClick={() => navigate(`/chat/${c._id}`)}
+                  onClick={() => {
+                    navigate(`/chat/${c._id}`);
+                    setShowChat(true);
+                  }}
                   className={`flex items-center gap-3 p-4 cursor-pointer border-b border-gray-50 transition ${
                     isActive ? "bg-primary-50" : "hover:bg-gray-50"
                   }`}
@@ -131,10 +160,27 @@ export const ChatPage = () => {
       </div>
 
       {/* Main chat pane */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div
+        className={`
+          ${showChat ? "flex" : "hidden"}
+          md:flex
+          flex-1
+          flex-col
+          bg-white
+          h-full
+        `}
+      >
         {chatId && activeConversation ? (
           <>
+            {/* Header with Mobile Back Button */}
             <div className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white">
+              <button
+                onClick={handleBackToList}
+                className="p-1 -ml-1 text-gray-500 hover:text-gray-900 rounded-md md:hidden"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+
               <div className="w-9 h-9 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-medium">
                 {getInitials(otherUser?.name)}
               </div>
@@ -148,6 +194,7 @@ export const ChatPage = () => {
               </div>
             </div>
 
+            {/* Chat History Container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50/50">
               {isLoading && messages.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center mt-8">
@@ -175,13 +222,13 @@ export const ChatPage = () => {
                       }`}
                     >
                       <div
-                        className={`max-w-[70%] px-3.5 py-2 rounded-2xl text-sm ${
+                        className={`max-w-[85%] md:max-w-[70%] px-3.5 py-2 rounded-2xl text-sm ${
                           isMine
                             ? "bg-primary-600 text-white rounded-br-sm"
                             : "bg-white border border-gray-200 text-gray-800 rounded-bl-sm"
                         } ${msg.isOptimistic ? "opacity-60" : ""}`}
                       >
-                        <p>{msg.text}</p>
+                        <p className="break-words">{msg.text}</p>
                         <p
                           className={`text-[10px] mt-1 text-right ${
                             isMine ? "text-primary-100" : "text-gray-400"
@@ -197,6 +244,7 @@ export const ChatPage = () => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Bottom Form Layout */}
             <form
               onSubmit={handleSendMessage}
               className="p-4 border-t border-gray-200 flex gap-3 bg-white"
@@ -206,19 +254,19 @@ export const ChatPage = () => {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm"
               />
               <button
                 type="submit"
                 disabled={!inputText.trim()}
-                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-full transition-colors"
+                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-full transition-colors text-sm flex-shrink-0"
               >
                 Send
               </button>
             </form>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-2">
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-2 p-4 text-center">
             <p className="text-sm">Select a conversation to start chatting</p>
           </div>
         )}
