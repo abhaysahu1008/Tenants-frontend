@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://api.teenants.site";
+const API_BASE_URL = "https://api.teenants.site/api";
 // const API_BASE_URL =
 //   import.meta.env.VITE_API_BASE_URL || "https://teenants-app.onrender.com";
 
