@@ -6,7 +6,7 @@ const navItems = [
   { to: "/properties", label: "Listings" },
   { to: "/matches", label: "Matches" },
   { to: "/applications", label: "Applications" },
-  { to: "/chat", label: "Chat" }, // Point to base route cleanly
+  { to: "/chat", label: "Chat" },
   { to: "/profile", label: "Profile" },
 ];
 
@@ -22,8 +22,12 @@ export const Navbar = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -41,13 +45,15 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} className={activeLinkClass}>
-                {item.label}
-              </NavLink>
-            ))}
-          </div>
+          {isAuthenticated && (
+            <div className="flex items-center gap-2">
+              {navItems.map((item) => (
+                <NavLink key={item.to} to={item.to} className={activeLinkClass}>
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
