@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
+import L from "leaflet";
+import { AlertCircle, Home, MapPin } from "lucide-react";
+import { useState } from "react";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { Input } from "../components/ui/Input";
-import { Select } from "../components/ui/Select";
 import { Button } from "../components/ui/Button";
 import { Card, CardBody } from "../components/ui/Card";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select";
+import { useAuth } from "../context/AuthContext";
 import {
-  GENDER_OPTIONS,
   FOOD_OPTIONS,
+  GENDER_OPTIONS,
   SLEEP_OPTIONS,
 } from "../utils/constants";
-import { Home, AlertCircle, MapPin } from "lucide-react";
-import L from "leaflet";
 
 // Fix for missing default Leaflet icons in Webpack/Vite setups
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -94,6 +94,11 @@ export const SignupPage = () => {
       setErrors({ submit: "Please select a location on the map." });
       return;
     }
+    // Client-side validation: ensure budget range is sensible
+    if (Number(formData.budgetMin) >= Number(formData.budgetMax)) {
+      setErrors({ submit: "Min budget must be less than max budget." });
+      return;
+    }
     setIsSubmitting(true);
     try {
       await signup({
@@ -106,7 +111,12 @@ export const SignupPage = () => {
       });
       navigate("/login");
     } catch (err) {
-      setErrors({ submit: err.message || "Signup failed" });
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Signup failed";
+      setErrors({ submit: msg });
     } finally {
       setIsSubmitting(false);
     }
