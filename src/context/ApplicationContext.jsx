@@ -30,7 +30,13 @@ export const ApplicationProvider = ({ children }) => {
     try {
       const response =
         await applicationService.getPropertyApplicantsWithScore(propertyId);
-      setPropertyApplications(response.data.data || []);
+      // Normalize backend shape: backend returns items with `applicationId`.
+      const raw = response.data.data || [];
+      const normalized = raw.map((item) => ({
+        ...item,
+        _id: item._id || item.applicationId,
+      }));
+      setPropertyApplications(normalized);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch applications");
