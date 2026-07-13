@@ -240,7 +240,8 @@ export const SignupPage = () => {
                         onClick={handleDetectLocation}
                         className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium"
                       >
-                        <MapPin className="h-3 w-3" /> Detect Location
+                        <MapPin className="h-3 w-3 text-red-500 font-semibold" />{" "}
+                        Detect Location
                       </button>
                     </div>
 
