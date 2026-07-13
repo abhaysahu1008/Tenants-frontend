@@ -1,10 +1,11 @@
-import { useState } from "react";
 import { Home, LogOut, Menu, X } from "lucide-react";
+import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const navItems = [
   { to: "/properties", label: "Listings" },
+  { to: "/properties/create", label: "List Property" },
   { to: "/matches", label: "Matches" },
   { to: "/applications", label: "Applications" },
   { to: "/chat", label: "Chat" },
@@ -75,13 +76,21 @@ export const Navbar = () => {
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 p y-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
+              <>
+                <Link
+                  to="/properties/create"
+                  className="rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  List Property
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
