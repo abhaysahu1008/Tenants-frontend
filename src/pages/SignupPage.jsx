@@ -109,6 +109,7 @@ export const SignupPage = () => {
         latitude: Number(formData.latitude),
         smoking: formData.smoking === "true",
       });
+      alert("Signup Successful!");
       navigate("/login");
     } catch (err) {
       const msg =

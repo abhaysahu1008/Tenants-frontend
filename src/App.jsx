@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/layout/ProtectedRoute";
 import { AiMatchProvider } from "./context/AiMatchContext";
 import { ApplicationProvider } from "./context/ApplicationContext";
 import { AuthProvider } from "./context/AuthContext";
+import { ChatProvider } from "./context/ChatContext";
 import { PropertyProvider } from "./context/PropertyContext";
 import "./index.css";
 import { ApplicationsPage } from "./pages/ApplicationsPage";
@@ -12,11 +13,11 @@ import { CreatePropertyPage } from "./pages/CreatePropertyPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { MatchesPage } from "./pages/MatchesPage";
+import { MyListingsPage } from "./pages/MyListingsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { PropertiesPage } from "./pages/PropertiesPage";
 import { PropertyDetailPage } from "./pages/PropertyDetailPage";
 import { SignupPage } from "./pages/SignupPage";
-import { ChatProvider } from "./context/ChatContext";
 
 function App() {
   return (
@@ -53,6 +54,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <CreatePropertyPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/my-listings"
+                      element={
+                        <ProtectedRoute>
+                          <MyListingsPage />
                         </ProtectedRoute>
                       }
                     />
